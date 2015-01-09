@@ -17,6 +17,7 @@ class MeshFeatures:
         self.mesh_name = mesh_name
         self.mesh = openmesh.TriMesh()
         self.mesh.request_vertex_normals()
+        self.mesh.request_face_normals()
         self.mesh.request_vertex_texcoords2D()
         self.mesh.request_face_texture_index()
         assert os.path.isfile(mesh_name)
@@ -26,6 +27,8 @@ class MeshFeatures:
         ropt += openmesh.Options.VertexTexCoord
         ropt += openmesh.Options.FaceTexCoord
         openmesh.read_mesh(self.mesh, mesh_name, ropt)
+        # in case mesh do not have normals
+        self.mesh.update_normals()
 
     def load_features(self):
         feature_path = os.path.dirname(self.mesh_name) + '/../features/'
@@ -46,7 +49,7 @@ class MeshFeatures:
         self.collect_vertex_normal()
         print 'computing mean curvature'
         self.calc_mean_curvature()
-        print 'computing directional occlusion, it will take serveral mins'
+        print 'computing directional occlusion, it will take long time for large mesh'
         self.calc_directional_occlusion(phi_sample_num=31, theta_sample_num=31)
     
         self.features = np.empty((self.mesh.n_vertices(), 9))
@@ -158,7 +161,7 @@ class MeshFeatures:
             nor = self.mesh.normal(vh)
             # move out a little bit, otherwise all intersected
             v_norm = np.array([nor[0], nor[1], nor[2]])
-            vert = np.array([pos[0], pos[1], pos[2]]) + 0.01 * v_norm 
+            vert = np.array([pos[0], pos[1], pos[2]]) + 0.1 * v_norm 
             for i in xrange(phi_sample_num):
                 for j in xrange(theta_sample_num):
                     id = bsptree.IntersectWithLine(vert, vert+rays[i,j], 0.001,

@@ -75,7 +75,10 @@ class TextureTransfer:
         self.source_texture = self.texture.get_vertex_color(self.source.mesh)
         
     def feature_texture_cca():
-        
+        # use Canonical Correlation Analysis
+        # 3 for rgb
+        cca = CCA(n_components=3)
+        cca.fit(self.source.features, self.source_texture)
 
 if __name__ == '__main__':
     pass
