@@ -38,6 +38,7 @@ class MeshFeatures:
         assert os.path.isfile(name)
         print 'loading features from ', name
         self.features = np.loadtxt(name)
+        print ' '
 
     def assemble_features(self):
         """
@@ -69,6 +70,7 @@ class MeshFeatures:
         name = feature_path + name + ".txt"
         print 'saving features to ', name
         np.savetxt(name, self.features, fmt='%.8f')
+        print ' '
 
     def calc_normalized_height(self):
         ### I assume y coordinate is height
