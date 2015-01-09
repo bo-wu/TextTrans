@@ -40,11 +40,16 @@ class MeshFeatures:
         self.features[:,1:4] = self.vertex_normal
         self.features[:,4] = self.mean_curvature
         self.features[:,5:] = self.direc_occlu
-        feature_path = '../features/'
+
+        """
+        computes features once, and save for later use
+        """
+        feature_path = os.path.dirname(self.mesh_name) + '/../features/'
+        if not os.path.exists(feature_path):
+            os.makedirs(feature_path)
         name_ext = os.path.basename(self.mesh_name)
         name, ext = os.path.splitext(name_ext)
-        if not os.path.exists(
-        name = name + "_features.txt"
+        name = feature_path + name + ".txt"
         np.savetxt(name, self.features, fmt='%.8f')
 
     def calc_normalized_height(self):
