@@ -2,6 +2,8 @@
 """
 Author: Bo Wu
 contact: wubo.gfkd@gmail.com 
+Todo list:
+    add random to theta and phi
 """
 
 import numpy as np
@@ -16,24 +18,36 @@ class MeshFeatures:
         self.mesh = openmesh.TriMesh()
         self.mesh.request_vertex_normals()
         self.mesh.request_vertex_texcoords2D()
+        self.mesh.request_face_texture_index()
         assert os.path.isfile(mesh_name)
+        print 'reading mesh ', mesh_name
         ropt = openmesh.Options()
         ropt += openmesh.Options.VertexNormal
         ropt += openmesh.Options.VertexTexCoord
+        ropt += openmesh.Options.FaceTexCoord
         openmesh.read_mesh(self.mesh, mesh_name, ropt)
 
-    def load_features(self, filename):
-        assert os.path.isfile(filename)
-        self.features = np.loadtxt(filename)
+    def load_features(self):
+        feature_path = os.path.dirname(self.mesh_name) + '/../features/'
+        name_ext = os.path.basename(self.mesh_name)
+        name, ext = os.path.splitext(name_ext)
+        name = feature_path + name + ".txt"
+        assert os.path.isfile(name)
+        print 'loading features from ', name
+        self.features = np.loadtxt(name)
 
     def assemble_features(self):
         """
         features: height(1) + vertex_normal(3) + mean_curvature(1) + direc_occlu(4) = 9
         """
+        print 'computing normalized heights'
         self.calc_normalized_height()
+        print 'collecting vertex normals'
         self.collect_vertex_normal()
+        print 'computing mean curvature'
         self.calc_mean_curvature()
-        self.calc_directional_occlusion(phi_sample_num=51, theta_sample_num=51)
+        print 'computing directional occlusion, it will take serveral mins'
+        self.calc_directional_occlusion(phi_sample_num=31, theta_sample_num=31)
     
         self.features = np.empty((self.mesh.n_vertices(), 9))
         self.features[:,0] = self.normalized_height
@@ -50,6 +64,7 @@ class MeshFeatures:
         name_ext = os.path.basename(self.mesh_name)
         name, ext = os.path.splitext(name_ext)
         name = feature_path + name + ".txt"
+        print 'saving features to ', name
         np.savetxt(name, self.features, fmt='%.8f')
 
     def calc_normalized_height(self):
@@ -226,7 +241,10 @@ class MeshFeatures:
 if __name__ == '__main__':
     from timeit import Timer
     import argparse
-    source = MeshFeatures('399.obj')
+    parser = argparse.ArgumentParser(description='args: path to mesh')
+    parser.add_argument('mesh_name', help='input path to mesh')
+    args = parser.parse_args()
+    source = MeshFeatures(args.mesh_name)
     source.assemble_features()
 
     #t1 = Timer("source=MeshFeatures('399.obj')", "from __main__ import MeshFeatures")
