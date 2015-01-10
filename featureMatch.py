@@ -9,7 +9,7 @@ class FeatureMatch:
         B.shape = (6,3)
         self.itera = iter
         self.R = np.empty((6, 3, iter))
-        self.R[:,:,0]= B
+        self.R[:,:,0] = B
         for i in xrange(1, iter):
             #generate rotation
             a = np.random.randn(3, 3)
@@ -27,7 +27,7 @@ class FeatureMatch:
         PY = np.cumsum(pY)
         PY = PY / PY[-1]
         #
-        small_damping = np.arange(nbins+2, dtype=np.float) / (nbins+1) * 1e-3 
+        small_damping = np.arange(nbins+2, dtype=np.float) / nbins * 1e-3 
         PX = np.insert(PX, 0, 0)
         PX = np.append(PX, nbins)
         PX = PX + small_damping
@@ -43,7 +43,6 @@ class FeatureMatch:
         return xInterval[1:-1]
 
 
-
     def match(self, target_features, source_features):
         """
         here target should match source feature distribution
@@ -51,26 +50,27 @@ class FeatureMatch:
         source_features.shape = (3, n)
         """
         if source_features.shape[0] != 3 or target_features.shape[0] != 3:
-            print 'features shape should be nx3, match failure'
+            print 'features shape should be 3xN, match failure'
             sys.exit()
         else:
-            steps = 301
+            steps = 302
             for i in xrange(self.itera):
                 Rotate = self.R[:,:,i]
-                temp_target = Rotate.dot(target_features)
-                temp_source = Rotate.dot(source_features)
+                temp_target = np.dot(Rotate, target_features)
+                temp_source = np.dot(Rotate, source_features)
                 target_source = np.hstack((temp_target, temp_source))
                 feature_min = np.min(target_source, axis=1)
                 feature_max = np.max(target_source, axis=1)
                 target_hist = np.empty((temp_target.shape[0], steps-1))
                 source_hist = np.empty((temp_source.shape[0], steps-1))
 
-                # for each line
+                # for each line, get the marginals
                 for j in xrange(temp_target.shape[0]):
                     bins = np.linspace(feature_min[j], feature_max[j], steps)
                     target_hist[j], _ = np.histogram(temp_target[j], bins)
                     source_hist[j], _ = np.histogram(temp_source[j], bins)
 
+                # match the marginals
                 temp_target_changed = np.empty(temp_target.shape)
                 for j in xrange(temp_target.shape[0]):
                     xInterval = self.pdf_transfer1D(target_hist[j], source_hist[j])
@@ -79,17 +79,17 @@ class FeatureMatch:
                                                         feature_min[j])*scale,
                                                        np.arange(len(xInterval)),
                                                        xInterval) / scale + feature_min[j]
-                
+
                 u, s, v = np.linalg.svd(Rotate)
+
                 s = 1.0 / s
                 S = np.zeros(Rotate.shape)
-                minDim = min(Rotate.shape[0], Rotate.shape[1])
+                minDim = min(Rotate.shape)
                 S[:minDim, :minDim] = np.diag(s)
-                r_inv = ( (v.T).dot(S.T) ).dot(u.T)
-                target_features = r_inv.dot(temp_target_changed - temp_target) + target_features
+                R_inv = ( (v.T).dot(S.T) ).dot(u.T)
+                target_features = R_inv.dot(temp_target_changed - temp_target) + target_features
 
-            return target_features
-
+        return target_features
 
 
     def pyramid_match(self):
@@ -103,8 +103,8 @@ class FeatureMatch:
 if __name__ == '__main__':
     from skimage import io, util
     import matplotlib.pyplot as plt
-    source_img = io.imread('scotland_plain.jpg')
     target_img = io.imread('scotland_house.jpg')
+    source_img = io.imread('scotland_plain.jpg')
     source_img = util.img_as_float(source_img)
     target_img = util.img_as_float(target_img)
     source_img = source_img[:,:,:3]
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     target_shape = target_img.shape
     source_img = source_img.reshape(-1, 3)
     target_img = target_img.reshape(-1, 3)
-    fm = FeatureMatch(20)
+    fm = FeatureMatch(1)
     target_res = fm.match(target_img.transpose(), source_img.transpose())
     fig, ax = plt.subplots(2,2)
     ax[0,0].imshow(target_img.reshape(target_shape))
