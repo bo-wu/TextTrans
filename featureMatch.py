@@ -45,6 +45,7 @@ class FeatureMatch:
 
     def match(self, target_features, source_features):
         """
+        essentially, it is histogram match
         here target should match source feature distribution
         target_features.shape = (3, m)
         source_features.shape = (3, n)
@@ -75,8 +76,7 @@ class FeatureMatch:
                 for j in xrange(temp_target.shape[0]):
                     xInterval = self.pdf_transfer1D(target_hist[j], source_hist[j])
                     scale = (len(xInterval) - 1) / (feature_max[j] - feature_min[j])
-                    temp_target_changed[j] = np.interp((temp_target[j] -
-                                                        feature_min[j])*scale,
+                    temp_target_changed[j] = np.interp((temp_target[j] - feature_min[j])*scale,
                                                        np.arange(len(xInterval)),
                                                        xInterval) / scale + feature_min[j]
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
     target_shape = target_img.shape
     source_img = source_img.reshape(-1, 3)
     target_img = target_img.reshape(-1, 3)
-    fm = FeatureMatch(1)
+    fm = FeatureMatch(10)
     target_res = fm.match(target_img.transpose(), source_img.transpose())
     fig, ax = plt.subplots(2,2)
     ax[0,0].imshow(target_img.reshape(target_shape))
