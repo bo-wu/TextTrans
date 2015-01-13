@@ -6,7 +6,7 @@ class FeatureMatch:
     """
     this class is about feature matching
     """
-    def __init__(self, iter):
+    def __init__(self, iter=10):
         B = np.array([1,0,0, 0,1,0, 0,0,1, 2/3.,2/3.,-1/3.,
                            2/3.,-1/3.,2/3., -1/3.,2/3.,2/3.])
         B.shape = (6,3)
@@ -57,7 +57,8 @@ class FeatureMatch:
             print 'features shape should be 3xN, match failure'
             sys.exit()
         else:
-            steps = 302
+            #steps = 302
+            steps = 255
             for i in xrange(self.itera):
                 Rotate = self.R[:,:,i]
                 temp_target = np.dot(Rotate, target_features)
@@ -77,6 +78,7 @@ class FeatureMatch:
                 # match the marginals
                 temp_target_changed = np.empty(temp_target.shape)
                 for j in xrange(temp_target.shape[0]):
+                    ## xIndex is (can be regarded as) actually pixel value !!!
                     xIndex = self.pdf_transfer1D(target_hist[j], source_hist[j])
                     scale = (len(xIndex) - 1) / (feature_max[j] - feature_min[j])
                     temp_target_changed[j] = np.interp((temp_target[j] - feature_min[j])*scale,
