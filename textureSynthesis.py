@@ -18,6 +18,8 @@ class TextureSynthesis:
         self.target_colors = target_colors
         self.source_features = source_features
         self.source_colors = source_colors
+        self.fm = FeatureMatch()
+        self.decorrelate_color()
 
 
     def decorrelate_color(self):
@@ -44,7 +46,7 @@ class TextureSynthesis:
 
     def back_to_color(self):
         """
-        project back to color
+        project back to color from another space(above, scale and rotation)
         target_colors.shape is (N, 3)
         """
         self.target_real_colors = self.back_matrix.dot(self.decorrelated_target.T)
@@ -53,41 +55,50 @@ class TextureSynthesis:
         return target_real_colors
 
     
-    def histogram_matching(self):
+    def histogram_matching(self, target_part, source_part):
         """
-        histogram matching
-        decorrelated_target.shape = (M, 3)
-        decorrelated_source.shape = (N, 3)
+        classical histogram matching
+        target_part.shape = (M, 3)
+        source_part.shape = (N, 3)
         """
         steps = 301
-        temp_target = self.decorrelated_target.T
-        temp_source = self.decorrelated_source.T
+        temp_target = target_part.copy()
+        temp_source = source_part.copy()
+        temp_target = temp_target.transpose()
+        temp_source = temp_source.transpose()
         target_source = np.hstack((temp_target, temp_source))
         color_min = np.min(target_source, axis=1)
         color_max = np.max(target_source, axis=1)
         target_color_hist = np.empty((temp_target.shape[0], steps-1))
         source_color_hist = np.empty((temp_source.shape[0], steps-1))
 
-        fm = FeatureMatch()
-        for i in xrange(self.temp_target.shape[0]):
+        # for each color chanel
+        xIndex = np.zeros(temp_target.shape)
+        for i in xrange(temp_target.shape[0]):
             bins = np.linspace(color_min[i], color_max[i], steps)
             target_hist[i], _ = np.histogram(temp_target[i], bins)
             source_hist[i], _ = np.histogram(temp_source[i], bins)
-            xIndex = fm.pdf_transfer1D(target_hist[i], source_hist[i])
+            xIndex[i] = self.fm.pdf_transfer1D(target_hist[i], source_hist[i])
             scale = (len(xIndex) - 1) / (color_max[i] - color_min[i])
             temp_target[i] = np.interp((temp_target[i] -
                                         color_min[i])*scale,
                                        np.arange(len(xIndex)),
                                        xIndex) / scale + color_min[i]
 
-        self.decorrelated_target = temp_target.T
-        return temp_target.T
+        return xIndex, color_max, color_min
 
-        
-
+    
+    def histogram_interpolation(self, target_part, source_parts):
+        """
+        from paper "Texture design using a simplicial complex of morphable textures"
+        do the histogram interpolation via xIndex(intensity) interpolation
+        """
+        for i in xrange(source_parts.shape[0]):
+            
 
     def segment_match(self, K=10, N=3):
         """
+        segment && match
         segment both target_features and source_features to K parts, 
         then for each part in target choose n nearest parts from source to 
         interpolate as target
@@ -107,7 +118,6 @@ class TextureSynthesis:
         neigh.fit(source_km.cluster_centers_)
         distance, index = neigh.kneighbors(target_km.cluster_centers_)
 
-        fm = FeatureMatch(iter=10)
         # for each segment in target, use the N nearest part from source
         for i in xrange(K):
             target_segment_features = self.target_features[self.target_km.labels == i]

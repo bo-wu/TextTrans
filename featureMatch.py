@@ -57,8 +57,7 @@ class FeatureMatch:
             print 'features shape should be 3xN, match failure'
             sys.exit()
         else:
-            #steps = 302
-            steps = 255
+            steps = 302
             for i in xrange(self.itera):
                 Rotate = self.R[:,:,i]
                 temp_target = np.dot(Rotate, target_features)
