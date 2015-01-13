@@ -3,6 +3,9 @@ import numpy as np
 import sys
 
 class FeatureMatch:
+    """
+    this class is about feature matching
+    """
     def __init__(self, iter):
         B = np.array([1,0,0, 0,1,0, 0,0,1, 2/3.,2/3.,-1/3.,
                            2/3.,-1/3.,2/3., -1/3.,2/3.,2/3.])
@@ -35,12 +38,12 @@ class FeatureMatch:
         PY = np.append(PY, nbins)
         PY = PY + small_damping
         
-        yInterval = np.arange(nbins, dtype=np.float)
-        yInterval = yInterval + 1e-16
-        yInterval = np.insert(yInterval, 0, 0)
-        yInterval = np.append(yInterval, nbins+1e-10)
-        xInterval = np.interp(PX, PY, yInterval)
-        return xInterval[1:-1]
+        yIndex = np.arange(nbins, dtype=np.float)
+        yIndex = yIndex + 1e-16
+        yIndex = np.insert(yIndex, 0, 0)
+        yIndex = np.append(yIndex, nbins+1e-10)
+        xIndex = np.interp(PX, PY, yIndex)
+        return xIndex[1:-1]
 
 
     def match(self, target_features, source_features):
@@ -74,11 +77,11 @@ class FeatureMatch:
                 # match the marginals
                 temp_target_changed = np.empty(temp_target.shape)
                 for j in xrange(temp_target.shape[0]):
-                    xInterval = self.pdf_transfer1D(target_hist[j], source_hist[j])
-                    scale = (len(xInterval) - 1) / (feature_max[j] - feature_min[j])
+                    xIndex = self.pdf_transfer1D(target_hist[j], source_hist[j])
+                    scale = (len(xIndex) - 1) / (feature_max[j] - feature_min[j])
                     temp_target_changed[j] = np.interp((temp_target[j] - feature_min[j])*scale,
-                                                       np.arange(len(xInterval)),
-                                                       xInterval) / scale + feature_min[j]
+                                                       np.arange(len(xIndex)),
+                                                       xIndex) / scale + feature_min[j]
 
                 u, s, v = np.linalg.svd(Rotate)
 
@@ -88,7 +91,8 @@ class FeatureMatch:
                 S[:minDim, :minDim] = np.diag(s)
                 R_inv = ( (v.T).dot(S.T) ).dot(u.T)
                 target_features = R_inv.dot(temp_target_changed - temp_target) + target_features
-
+        
+        # return 3, m
         return target_features
 
 

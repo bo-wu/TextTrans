@@ -26,11 +26,11 @@ class TextureData:
         width, height = self.img.shape[:2]
 
         texture_coord = self.collect_texture_coord(mesh)
-        texture_colors = np.empty((mesh.n_vertices, 3))
+        vertex_colors = np.empty((mesh.n_vertices, 3))
         for i in xrange(len(self.texture_coord)):
-            texture_colors[i] = self.img[texture_coord[i, 0]*(width-1),
+            vertex_colors[i] = self.img[texture_coord[i, 0]*(width-1),
                                          texture_coord[i, 1]*(height-1), :3]
-        return texture_colors
+        return vertex_colors
         
     def collect_texture_coord(self, mesh):
         texture_coord = np.empty((mesh.n_vertices(), 2))
@@ -39,7 +39,6 @@ class TextureData:
             for i in xrange(2):
                 texture_coord[vh.idx(), i] = tex2d[i]
         return texture_coord
-
 
 
 
